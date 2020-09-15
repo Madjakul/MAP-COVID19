@@ -5,8 +5,14 @@ from .translate import CountryTranslator
 
 
 class Util:
-    def __init__(self, dataset, excel=False):
-        self.df = pd.read_excel(dataset) if excel else pd.read_csv(dataset)
+    '''
+    Regroupe toutes les fonctions nécessaire à preproces un dataframe
+    '''
+    def __init__(self, dataset, excel=False, url=False):
+        if url == False:
+            self.df = pd.read_excel(dataset) if excel else pd.read_csv(dataset)
+        else:
+            self.df = pd.read_csv(dataset, error_bad_lines=False)
 
     def melt(self, newIndexes, varName):
         # Melt et trie les données en fonction du pays et de la date
