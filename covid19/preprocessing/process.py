@@ -8,9 +8,11 @@ class Util:
     '''
     Regroupe toutes les fonctions nécessaire à preproces un dataframe
     '''
-    def __init__(self, dataset, excel=False, url=False):
-        if url == False:
-            self.df = pd.read_excel(dataset) if excel else pd.read_csv(dataset)
+    def __init__(self, dataset, excel=False, url=False, dataFrame=False):
+        if url == False and dataFrame == False:
+            self.df = pd.read_excel(dataset) if excel else pd.read_csv(dataset, index_col=0)
+        elif dataFrame == True:
+            self.df = dataset
         else:
             self.df = pd.read_csv(dataset, error_bad_lines=False)
 
@@ -36,6 +38,12 @@ class Util:
 
     def delete_columns(self, columns):
         self.df.drop(columns=columns, axis=1, inplace=True)
+
+    def to_csv(self, name, encoding):
+        self.df.to_csv(name, encoding=encoding)
+
+    def to_dict(self, orient):
+        return self.df.to_dict(orient=orient)
     
     def translate_countries(self, column):
         countryList = []
@@ -49,7 +57,7 @@ class Util:
         self.df["Primary_Key"] = self.df[column1].astype(str) + self.df[column2].astype(str)
 
     def __add__(self, other):
-        return pd.merge(self.df, other.df)
+        return Util(pd.merge(self.df, other.df), dataFrame=True)
 
     def __str__(self):
         return (str(self.df.info()) + "\n" + str(self.df))
