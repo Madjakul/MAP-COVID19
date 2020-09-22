@@ -1,16 +1,20 @@
+from ..preprocessing.process import Util
 from elasticsearch import helpers, Elasticsearch
 import csv
 import pandas as pd
 
 
-class Loader():
-    def __init__(self):
-        pass
+class Loader(Util):
+    def __init__(self, dataset, zip):
+        super().__init__(dataset, zip=zip)
+
+    def to_dict(self, orient):
+        self.dict = self.df.to_dict(orient=orient) 
 
     @staticmethod
     def run():
         es = Elasticsearch()
-        myData = pd.read_csv("assets/final.csv.gz", compression="gzip")
-        documents = myData.to_dict(orient="records")
-        helpers.bulk(es, documents, index="covid19")
+        myData = Loader("assets/final.csv.gz", "gzip")
+        myData.to_dict(orient="records")
+        helpers.bulk(es, myData.dict, index="covid19")
         print("Succès !")

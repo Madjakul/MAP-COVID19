@@ -1,7 +1,9 @@
+# __main__.py
+
 import pandas as pd
-from .preprocessing.combine import Merge
+from .preprocessing.process import Util
 from .elasticsearch.loader import Loader
+from .clustering.hierarchical import SL
 
 if __name__ == "__main__":
-    Merge.run()
-    Loader.run()
+    SL.run()
