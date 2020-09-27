@@ -34,9 +34,9 @@ class Util:
     def write(self):
         self.df.to_csv('assets/exit.csv', encoding='utf-8')
 
-    def aggregate_sum(self, id, toSum=None):
+    def aggregate_sum(self, id, index=False):
         # Fais la somme de chaque ligne en fonction du pays
-        self.df = self.df.groupby(id, as_index=False).sum() if toSum is None else self.df.groupby(id).agg(toSum)
+        self.df = self.df.groupby(id, as_index=False).sum() if index == False else self.df.groupby(id).sum()
 
     def rename_column(self, oldName, newName):
         self.df.rename(columns = {oldName:newName}, inplace = True)
