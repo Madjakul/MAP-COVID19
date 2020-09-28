@@ -3,7 +3,7 @@
 import pandas as pd
 from .preprocessing.process import Util
 from .elasticsearch.loader import Loader
-from .clustering.hierarchical import SL
+from .clustering.unsupervised import MyDBSCAN
 
 if __name__ == "__main__":
-    SL.run()
+    MyDBSCAN.run()
