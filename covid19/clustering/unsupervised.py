@@ -32,21 +32,28 @@ class MyDBSCAN(Util):
     @staticmethod
     def run():
         data = Util("assets/final.csv.gz", zip="gzip")
-        data.delete_columns(["Pays_Ou_Entites", "Date", "alpha-3", "Continent", "Sous_Continent", "Superficie_(En_Milliers_De_Km2)",
+        data.delete_columns(["Pays_Ou_Entites", "alpha-3", "Continent", "Sous_Continent", "Superficie_(En_Milliers_De_Km2)",
                                 "Population_Mi-2019_(En_Millions)", "Projection_De_La_Population_En_2050_(En_Millions)", "Esperance_De_Vie_A_La_Naissance_Hommes_Femmes_(En_Annees)_3",
                                 "Taux_de_natalite_(en_%)", "Taux_de_mortalite(en_%)", "Taux_de_mortalite_infantile_(en_%)"])
+        data.df["Total_cas_confirmés"] = data.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_cas_confirmés"]
+        data.df["Total_deces"] = data.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_deces"]
+        data.df["Total_cas_remission"] = data.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_cas_remission"]
         data.aggregate_sum(["Country/Region"], True)
         data.delete_columns("Unnamed: 0")
         data.df["Fatality_Rate"] = (data.df["Total_deces"] / data.df["Total_cas_confirmés"]) * 100
-        # dataPrincipal = MyPCA(data.df, 3, dataFrame=True)
         data.df["value"] = data.df.apply(lambda row: label_country(row), axis=1)
-        data.df = data.df.astype({"value": int})
-        dataTSNE = T_SNE(data.df, dataFrame=True)
+        dataPrincipal = MyPCA(data.df, 3, dataFrame=True)
+        dataPrincipal.plot()
+        dataPrincipal.plot_3d()
+        print(dataPrincipal.explained_variance())
+        # data.df = data.df.astype({"value": int})
+        # dataTSNE = T_SNE(data.df, dataFrame=True)
+        # dataTSNE.plot()
+        """
         dataReduced = dataTSNE.df[['tsne-2d-one', 'tsne-2d-two']].copy()
         cluster = MyDBSCAN(dataReduced)
         cluster.get_labels()
-        print(cluster)
-        
+        cluster.reset_index()
         data = dict(type = 'choropleth', 
            locations = cluster.df['Country/Region'],
            locationmode = 'country names',
@@ -55,7 +62,8 @@ class MyDBSCAN(Util):
            colorbar = {'title':'groupe'})
         layout = dict(title = 'Covid19 fatality rate', 
                     geo = dict(showframe = False, 
-                            projection = {'type': 'Mercator'}))
+                            projection = {'type': 'mercator'}))
         choromap3 = go.Figure(data = [data], layout=layout)
-        iplot(choromap3)
+        choromap3.show()
+        """
 

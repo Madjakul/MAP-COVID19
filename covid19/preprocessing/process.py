@@ -44,6 +44,9 @@ class Util:
     def delete_columns(self, columns):
         self.df.drop(columns=columns, axis=1, inplace=True)
 
+    def delete_nan(self):
+        self.df = self.df.dropna()
+
     def delete_duplicate(self, subset=None):
         self.df = self.df.drop_duplicates() if subset is None else self.df.drop_duplicates(subset=subset)
 
