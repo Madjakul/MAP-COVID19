@@ -2,8 +2,6 @@
 
 import pandas as pd
 import numpy as np
-import pycountry
-from .translate import CountryTranslator
 
 
 class Util:
@@ -34,9 +32,14 @@ class Util:
     def write(self):
         self.df.to_csv('assets/exit.csv', encoding='utf-8')
 
-    def aggregate_sum(self, id, index=False):
+    def aggregate(self, id, items, newItems):
         # Fais la somme de chaque ligne en fonction du pays
-        self.df = self.df.groupby(id, as_index=False).sum() if index == False else self.df.groupby(id).sum()
+        self.df = self.df.groupby(id).agg(items)
+        self.df.columns = newItems
+        self.df = self.df.reset_index()
+
+    def aggregate_sum(self, id):
+        self.df = self.df.groupby(id, as_index=False).sum()
 
     def rename_column(self, oldName, newName):
         self.df.rename(columns = {oldName:newName}, inplace = True)
@@ -52,20 +55,12 @@ class Util:
 
     def reset_index(self):
         self.df = self.df.reset_index()
+    
+    def set_index(self, id):
+        self.df = self.df.set_index(id)
 
     def to_csv(self, name, encoding):
         self.df.to_csv(name, encoding=encoding)
-    
-    def translate_countries(self, column):
-        countryList = []
-        for country in self.df[column]:
-            translator = CountryTranslator()
-            [countryList.append(i) for i in translator.translate(country)]
-        self.df["Country_FR"] = countryList
-
-    def create_primary_key(self, column1, column2):
-        # Combine deux labels afin de créer une clé primaire pour un dataframe
-        self.df["Primary_Key"] = self.df[column1].astype(str) + self.df[column2].astype(str)
 
     def __add__(self, other):
         return Util(pd.merge(self.df, other.df), dataFrame=True)
@@ -111,4 +106,13 @@ class Util:
         hopkinsDf3.rename_column("value", "Total_cas_remission")
 
         lastMerge = thirdMerge + hopkinsDf3
+        # here we remove the useless data
+        lastMerge.delete_columns(["Pays_Ou_Entites", "alpha-3", "Continent", "Sous_Continent", "Superficie_(En_Milliers_De_Km2)",
+                                "Population_Mi-2019_(En_Millions)", "Projection_De_La_Population_En_2050_(En_Millions)", "Esperance_De_Vie_A_La_Naissance_Hommes_Femmes_(En_Annees)_3",
+                                "Taux_de_natalite_(en_%)", "Taux_de_mortalite(en_%)", "Taux_de_mortalite_infantile_(en_%)", "Population_de_moins_de_15_ans", "Population_de_65_ans_ou_plus"])
+        # The data is cumulative, which cause some problem later on the project, let's retrive the daily reports from Hopkins cumuutaive data
+        lastMerge.df["Total_cas_confirmés"] = lastMerge.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_cas_confirmés"]
+        lastMerge.df["Total_deces"] = lastMerge.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_deces"]
+        lastMerge.df["Total_cas_remission"] = lastMerge.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_cas_remission"]
+        lastMerge.delete_nan()
         lastMerge.df.to_csv("assets/final.csv.gz", compression="gzip", encoding="utf-8")

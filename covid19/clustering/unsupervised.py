@@ -4,20 +4,9 @@ from ..preprocessing.process import Util
 from ..preprocessing.feature_extraction import MyPCA, T_SNE
 from sklearn.decomposition import PCA
 from sklearn.cluster import DBSCAN
-import scipy.cluster.hierarchy as shc
-import matplotlib.pyplot as plt
-import pandas as pd
 
 import plotly.graph_objs as go
 from plotly.offline import iplot
-
-def label_country(row):
-        if row["Fatality_Rate"] < 5:
-            return 1
-        if row["Fatality_Rate"] >= 5 and row["Fatality_Rate"] < 10:
-            return 2
-        else:
-            return 3
 
 
 class MyDBSCAN(Util):
@@ -27,43 +16,36 @@ class MyDBSCAN(Util):
 
     def get_labels(self):
         self.df["labels"] = self.clustering.labels_
-        print(self.clustering.labels_)
+
+    def plot(self):
+        self.get_labels()
+        self.reset_index()
+        data = dict(type = 'choropleth', 
+           locations = self.df['Country/Region'],
+           locationmode = 'country names',
+           z = self.df['labels'], 
+           text = self.df['Country/Region'],
+           colorbar = {'title':'groupe'})
+        layout = dict(title = 'Country clustering after t-SNE', 
+                    geo = dict(showframe = False, 
+                            projection = {'type': 'mercator'}))
+        choromap3 = go.Figure(data = [data], layout=layout)
+        choromap3.write_html("assets/choromap.html")
+        choromap3.show()
+
 
     @staticmethod
     def run():
         data = Util("assets/final.csv.gz", zip="gzip")
-        data.delete_columns(["Pays_Ou_Entites", "alpha-3", "Continent", "Sous_Continent", "Superficie_(En_Milliers_De_Km2)",
-                                "Population_Mi-2019_(En_Millions)", "Projection_De_La_Population_En_2050_(En_Millions)", "Esperance_De_Vie_A_La_Naissance_Hommes_Femmes_(En_Annees)_3",
-                                "Taux_de_natalite_(en_%)", "Taux_de_mortalite(en_%)", "Taux_de_mortalite_infantile_(en_%)"])
-        data.df["Total_cas_confirmés"] = data.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_cas_confirmés"]
-        data.df["Total_deces"] = data.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_deces"]
-        data.df["Total_cas_remission"] = data.df.drop(columns=["Date"], axis=1).groupby("Country/Region", as_index=False).diff()["Total_cas_remission"]
-        data.aggregate_sum(["Country/Region"], True)
-        data.delete_columns("Unnamed: 0")
-        data.df["Fatality_Rate"] = (data.df["Total_deces"] / data.df["Total_cas_confirmés"]) * 100
-        data.df["value"] = data.df.apply(lambda row: label_country(row), axis=1)
+        data.delete_columns(["Date", "Lat", "Long"])
+        data.aggregate(["Country/Region", "Superficie_(En_Km2)", "Population_Mi-2019", "Taux_De_Natalite_(Pour_1_000_Habitants)", "Taux_De_Mortalite_(Pour_1_000_Habitants)", "Projection_De_La_Population_En_2050", "Taux_De_Mortalite_Infantile_(Pour_1_000_Naissances)", "Indice_Synthetique_De_Fecondite_(Enfants_Par_Femme)", "Proportion_De_Moins_De_15_Ans_(En_%)", "Proportion_De_65_Ans_Ou_Plus_(En_%)", "Esperance_De_Vie_A_La_Naissance_Hommes_Femmes_(En_Annees)", "Revenu_National_Brut_P.P.A._Par_Hab._En_2018_(En_Dollars_Us)"],
+                            {"Total_cas_confirmés": ["sum"], "Total_deces": ["sum"], "Total_cas_remission": ["sum"]},
+                            ["Total_cas_confirmés", "Total_deces" ,"Total_cas_remission"])
+        data.set_index("Country/Region")
+        dataTSNE = T_SNE(data.df, dataFrame=True)
         dataPrincipal = MyPCA(data.df, 3, dataFrame=True)
-        dataPrincipal.plot()
-        dataPrincipal.plot_3d()
         print(dataPrincipal.explained_variance())
-        # data.df = data.df.astype({"value": int})
-        # dataTSNE = T_SNE(data.df, dataFrame=True)
-        # dataTSNE.plot()
-        """
+        
         dataReduced = dataTSNE.df[['tsne-2d-one', 'tsne-2d-two']].copy()
         cluster = MyDBSCAN(dataReduced)
-        cluster.get_labels()
-        cluster.reset_index()
-        data = dict(type = 'choropleth', 
-           locations = cluster.df['Country/Region'],
-           locationmode = 'country names',
-           z = cluster.df['labels'], 
-           text = cluster.df['Country/Region'],
-           colorbar = {'title':'groupe'})
-        layout = dict(title = 'Covid19 fatality rate', 
-                    geo = dict(showframe = False, 
-                            projection = {'type': 'mercator'}))
-        choromap3 = go.Figure(data = [data], layout=layout)
-        choromap3.show()
-        """
-
+        cluster.plot()
