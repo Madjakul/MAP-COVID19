@@ -30,7 +30,8 @@ class MyDBSCAN(Util):
                     geo = dict(showframe = False, 
                             projection = {'type': 'mercator'}))
         choromap3 = go.Figure(data = [data], layout=layout)
-        choromap3.write_html("assets/choromap.html")
+        with open("assets/choromap.html", "w") as f:
+            f.write(choromap3.to_html(include_plotlyjs="cdn"))
         choromap3.show()
 
 
