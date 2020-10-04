@@ -19,7 +19,7 @@ lint:
 	@bandit -r --ini setup.cfg
 
 build:
-	@docker build -t ###:latest .
+	@docker build -t covid19:latest .
 	@echo "\n${BLUE}Running the app...${NC}\n"
 	@docker run -t covid19 ls -l
 
