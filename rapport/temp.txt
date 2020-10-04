@@ -1,2 +1,0 @@
-https://coronavirus.jhu.edu/data/mortality
-Peut-ont prédire la mortalité du COVID grâce aux données non-temporelles de l'INED ?
